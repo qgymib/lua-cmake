@@ -4,9 +4,7 @@ Provide modern cmake support for lua.
 
 ## Usage
 
-Please add the branch you want to use as submodule.
-
-For example, if you want to use official lua-5.4.6 release, you can use following command:
+Please add the branch you want to use as submodule:
 
 ```bash
 git submodule add -b official/lua-5.4.6 https://github.com/qgymib/lua-cmake.git third_party/lua
