@@ -1,0 +1,211 @@
+From 7fce7320dd3fb95291b86a6de038f04948294926 Mon Sep 17 00:00:00 2001
+From: qgymib <4520263+qgymib@users.noreply.github.com>
+Date: Thu, 1 Feb 2024 08:57:17 +0800
+Subject: [PATCH] Apply patch 0000_utf8_win32
+
+---
+ CMakeLists.txt                  | 19 +++++++++
+ README.md                       |  6 ++-
+ src/Makefile                    |  2 +-
+ src/lprefix.h                   |  1 +
+ src/lua_patch_0000_utf8_win32.c | 73 +++++++++++++++++++++++++++++++++
+ src/lua_patch_0000_utf8_win32.h | 28 +++++++++++++
+ 6 files changed, 127 insertions(+), 2 deletions(-)
+ create mode 100644 src/lua_patch_0000_utf8_win32.c
+ create mode 100644 src/lua_patch_0000_utf8_win32.h
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 2aa9e53..3a303f2 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -50,6 +50,25 @@ if (UNIX)
+     target_link_libraries(liblua PRIVATE m)
+ endif ()
+ 
++###############################################################################
++# Patches
++###############################################################################
++
++option(LUA_PATCH_DISABLE_0000_UTF8_WIN32,
++    "Disable UTF-8 support on Windows"
++    OFF)
++if (LUA_PATCH_DISABLE_0000_UTF8_WIN32)
++    target_compile_options(liblua
++        PRIVATE
++            -DLUA_PATCH_DISABLE_0000_UTF8_WIN32
++    )
++else ()
++    target_sources(liblua
++        PRIVATE
++            src/lua_patch_0000_utf8_win32.c
++    )
++endif ()
++
+ ###############################################################################
+ # Setup executable
+ ###############################################################################
+diff --git a/README.md b/README.md
+index 6910011..36b226d 100644
+--- a/README.md
++++ b/README.md
+@@ -7,7 +7,7 @@ Provide modern cmake support for lua.
+ Please add the branch you want to use as submodule:
+ 
+ ```bash
+-git submodule add -b official/lua-5.4.6 https://github.com/qgymib/lua-cmake.git third_party/lua
++git submodule add -b unofficial/lua-5.4.6 https://github.com/qgymib/lua-cmake.git third_party/lua
+ ```
+ 
+ Then add to CMake build tree:
+@@ -20,6 +20,10 @@ target_link_libraries(${PROJECT_NAME}
+ )
+ ```
+ 
++## Patch list
++
+++ [0000_utf8_win32](patch/0000_utf8_win32/README.md)
++
+ ## Branch
+ 
+ There are two kind of branch:
+diff --git a/src/Makefile b/src/Makefile
+index b771196..2f42ab5 100644
+--- a/src/Makefile
++++ b/src/Makefile
+@@ -23,7 +23,7 @@ SYSLIBS=
+ MYCFLAGS=
+ MYLDFLAGS=
+ MYLIBS=
+-MYOBJS=
++MYOBJS= lua_patch_0000_utf8_win32.o
+ 
+ # Special flags for compiler modules; -Os reduces code size.
+ CMCFLAGS= 
+diff --git a/src/lprefix.h b/src/lprefix.h
+index 484f2ad..2f6785d 100644
+--- a/src/lprefix.h
++++ b/src/lprefix.h
+@@ -7,6 +7,7 @@
+ #ifndef lprefix_h
+ #define lprefix_h
+ 
++#include "lua_patch_0000_utf8_win32.h"
+ 
+ /*
+ ** Allows POSIX/XSI stuff
+diff --git a/src/lua_patch_0000_utf8_win32.c b/src/lua_patch_0000_utf8_win32.c
+new file mode 100644
+index 0000000..799a29f
+--- /dev/null
++++ b/src/lua_patch_0000_utf8_win32.c
+@@ -0,0 +1,73 @@
++#include "lua_patch_0000_utf8_win32.h"
++
++#if defined(__LUA_PATCH_0000_UTF8_WIN32_H__)
++
++#include <assert.h>
++
++WCHAR* lua_utf8_to_wide_win32(const char* str)
++{
++    int multi_byte_sz = MultiByteToWideChar(CP_UTF8, 0, str, -1, NULL, 0);
++    size_t buf_sz = multi_byte_sz * sizeof(WCHAR);
++
++    WCHAR* buf = (WCHAR*)malloc(buf_sz);
++    int ret = MultiByteToWideChar(CP_UTF8, 0, str, -1, (WCHAR*)buf, multi_byte_sz);
++    assert(ret == multi_byte_sz);
++
++    return buf;
++}
++
++char* lua_wide_to_utf8_win32(const WCHAR* str)
++{
++    int utf8_sz = WideCharToMultiByte(CP_UTF8, 0, str, -1, NULL, 0, NULL, NULL);
++    char* utf8 = malloc(utf8_sz + 1);
++    if (utf8 == NULL)
++    {
++        return NULL;
++    }
++
++    int ret = WideCharToMultiByte(CP_UTF8, 0, str, -1, utf8, utf8_sz, NULL, NULL);
++    assert(ret == utf8_sz);
++    utf8[utf8_sz] = '\0';
++
++    return utf8;
++}
++
++FILE* lua_fopen_win32(const char* pathname, const char* mode)
++{
++    wchar_t* filenamew = lua_utf8_to_wide_win32(pathname);
++    wchar_t* modew = lua_utf8_to_wide_win32(mode);
++
++    FILE* file = NULL;
++    errno_t errcode = _wfopen_s(&file, filenamew, modew);
++    free(filenamew);
++    free(modew);
++
++    if (errcode != 0)
++    {
++        errno = errcode;
++        return NULL;
++    }
++
++    return file;
++}
++
++FILE* lua_freopen_win32(const char* pathname, const char* mode, FILE* stream)
++{
++    wchar_t* filenamew = lua_utf8_to_wide_win32(pathname);
++    wchar_t* modew = lua_utf8_to_wide_win32(mode);
++
++    FILE* file = NULL;
++    errno_t errcode = _wfreopen_s(&file, filenamew, modew, stream);
++    free(filenamew);
++    free(modew);
++
++    if (errcode != 0)
++    {
++        errno = errcode;
++        return NULL;
++    }
++
++    return file;
++}
++
++#endif
+diff --git a/src/lua_patch_0000_utf8_win32.h b/src/lua_patch_0000_utf8_win32.h
+new file mode 100644
+index 0000000..7ea9f31
+--- /dev/null
++++ b/src/lua_patch_0000_utf8_win32.h
+@@ -0,0 +1,28 @@
++#if !defined(__LUA_PATCH_0000_UTF8_WIN32_H__) && defined(_WIN32) && !defined(LUA_PATCH_DISABLE_0000_UTF8_WIN32)
++#define __LUA_PATCH_0000_UTF8_WIN32_H__
++
++#ifndef _WIN32_WINNT
++#define _WIN32_WINNT 0x0600
++#endif
++
++#include <windows.h>
++#include <stdio.h>
++
++#define fopen(p, m)         lua_fopen_win32(p, m)
++#define freopen(p, m, s)    lua_freopen_win32(p, m, s)
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++char* lua_wide_to_utf8_win32(const WCHAR* str);
++WCHAR* lua_utf8_to_wide_win32(const char* str);
++
++FILE* lua_fopen_win32(const char* pathname, const char* mode);
++FILE* lua_freopen_win32(const char* pathname, const char* mode, FILE* stream);
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif
+-- 
+2.41.0.windows.3
+
