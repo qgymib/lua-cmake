@@ -51,6 +51,25 @@ if (UNIX)
 endif ()
 
 ###############################################################################
+# Patches
+###############################################################################
+
+option(LUA_PATCH_DISABLE_0000_UTF8_WIN32,
+    "Disable UTF-8 support on Windows"
+    OFF)
+if (LUA_PATCH_DISABLE_0000_UTF8_WIN32)
+    target_compile_options(liblua
+        PRIVATE
+            -DLUA_PATCH_DISABLE_0000_UTF8_WIN32
+    )
+else ()
+    target_sources(liblua
+        PRIVATE
+            src/lua_patch_0000_utf8_win32.c
+    )
+endif ()
+
+###############################################################################
 # Setup executable
 ###############################################################################
 add_executable(lua

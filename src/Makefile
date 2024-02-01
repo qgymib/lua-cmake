@@ -23,7 +23,7 @@ SYSLIBS=
 MYCFLAGS=
 MYLDFLAGS=
 MYLIBS=
-MYOBJS=
+MYOBJS= lua_patch_0000_utf8_win32.o
 
 # Special flags for compiler modules; -Os reduces code size.
 CMCFLAGS= 
