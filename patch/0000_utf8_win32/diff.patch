@@ -1,16 +1,16 @@
-From 7fce7320dd3fb95291b86a6de038f04948294926 Mon Sep 17 00:00:00 2001
+From 77a4abe646cb43b2ae78862ed423297714166ecb Mon Sep 17 00:00:00 2001
 From: qgymib <4520263+qgymib@users.noreply.github.com>
-Date: Thu, 1 Feb 2024 08:57:17 +0800
-Subject: [PATCH] Apply patch 0000_utf8_win32
+Date: Wed, 9 Oct 2024 11:21:15 +0800
+Subject: [PATCH] Generate patch
 
 ---
  CMakeLists.txt                  | 19 +++++++++
- README.md                       |  6 ++-
+ README.md                       |  4 ++
  src/Makefile                    |  2 +-
  src/lprefix.h                   |  1 +
  src/lua_patch_0000_utf8_win32.c | 73 +++++++++++++++++++++++++++++++++
  src/lua_patch_0000_utf8_win32.h | 28 +++++++++++++
- 6 files changed, 127 insertions(+), 2 deletions(-)
+ 6 files changed, 126 insertions(+), 1 deletion(-)
  create mode 100644 src/lua_patch_0000_utf8_win32.c
  create mode 100644 src/lua_patch_0000_utf8_win32.h
 
@@ -45,19 +45,10 @@ index 2aa9e53..3a303f2 100644
  # Setup executable
  ###############################################################################
 diff --git a/README.md b/README.md
-index 6910011..36b226d 100644
+index 6a9afe5..834b2a5 100644
 --- a/README.md
 +++ b/README.md
-@@ -7,7 +7,7 @@ Provide modern cmake support for lua.
- Please add the branch you want to use as submodule:
- 
- ```bash
--git submodule add -b official/lua-5.4.6 https://github.com/qgymib/lua-cmake.git third_party/lua
-+git submodule add -b unofficial/lua-5.4.6 https://github.com/qgymib/lua-cmake.git third_party/lua
- ```
- 
- Then add to CMake build tree:
-@@ -20,6 +20,10 @@ target_link_libraries(${PROJECT_NAME}
+@@ -22,6 +22,10 @@ target_link_libraries(${PROJECT_NAME}
  )
  ```
  
@@ -207,5 +198,5 @@ index 0000000..7ea9f31
 +
 +#endif
 -- 
-2.41.0.windows.3
+2.43.0
 
