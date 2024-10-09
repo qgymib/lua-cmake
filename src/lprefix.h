@@ -7,6 +7,7 @@
 #ifndef lprefix_h
 #define lprefix_h
 
+#include "lua_patch_0000_utf8_win32.h"
 
 /*
 ** Allows POSIX/XSI stuff

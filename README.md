@@ -7,7 +7,7 @@ Provide modern cmake support for lua.
 Please add the branch you want to use as submodule:
 
 ```bash
-git submodule add -b official/lua-5.4.7 https://github.com/qgymib/lua-cmake.git third_party/lua
+git submodule add -b unofficial/lua-5.4.7 https://github.com/qgymib/lua-cmake.git third_party/lua
 ```
 
 Then add to CMake build tree:
@@ -19,6 +19,10 @@ target_link_libraries(${PROJECT_NAME}
         liblua
 )
 ```
+
+## Patch list
+
++ [0000_utf8_win32](patch/0000_utf8_win32/README.md)
 
 ## Branch
 
